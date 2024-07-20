@@ -24,18 +24,21 @@ const getFilesInDirectory = (dir: string) => {
 };
 
 // Get files from the dist/platforms directory, and filter it to only get the .js files as needed.
-const platformFiles = getFilesInDirectory("./dist/platforms").filter((file) =>
-	file.endsWith(".js")
+const platformFiles = getFilesInDirectory("./dist/src/platforms").filter(
+	(file) => file.endsWith(".js")
 );
 
 // Loop thru the files, and import them to receive data.
 for (const file of platformFiles) {
-	import(`../${file}`)
+	import(`../../${file}`)
 		.then(async (i) => {
 			const module = i.default.default;
-			if (module.data.show) platforms.set(i.name, i);
+			if (module.show) platforms.set(module.name, module);
 		})
 		.catch((error) => {
 			console.error(`Error importing ${file}: ${error}`);
 		});
 }
+
+// Export
+export default platforms;
