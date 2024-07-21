@@ -1,9 +1,9 @@
 import { FastifyReply, FastifyRequest } from "fastify";
-import platforms from "../../../platformIndex";
-import { PlatformType } from "../../../types";
+import { platforms } from "../../../main.js";
+import { PlatformType } from "../../../types.js";
 
 export default {
-	url: "/platforms/get",
+	url: "/get",
 	method: "GET",
 	schema: {
 		summary: "Get Platforms",

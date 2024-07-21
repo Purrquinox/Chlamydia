@@ -1,4 +1,4 @@
-import { PlatformInterface, PlatformType } from "../types";
+import { PlatformInterface, PlatformType } from "../types.js";
 
 class NZXT implements PlatformInterface {
 	private name: string;

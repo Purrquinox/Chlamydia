@@ -3,8 +3,9 @@
 	"version": "0.0.1-predev",
 	"description": "Chlamydia is a comprehensive program designed to enhance the customization and personalization of your PC's RGB lighting and AIO cooler. By leveraging the SDKs of supported RGB systems, such as Corsair and NZXT, it provides users with greater control and flexibility over their hardware. This allows for a more tailored and immersive gaming or computing experience, making it easier to achieve the exact look and performance you desire.",
 	"main": "index.js",
+	"type": "module",
 	"scripts": {
-		"start": "node ./dist/src/api/api",
+		"start": "node ./dist/api/api",
 		"tsc": "tsc",
 		"format": "prettier --write ."
 	},
@@ -19,13 +20,14 @@
 	},
 	"homepage": "https://github.com/selectdev/Chlamydia#readme",
 	"dependencies": {
-		"colors": "^1.4.0",
-		"fs": "^0.0.1-security",
+		"@fastify/autoload": "^5.10.0",
 		"@fastify/cors": "^8.5.0",
 		"@fastify/rate-limit": "^9.1.0",
 		"@fastify/swagger": "^8.14.0",
-		"@fastify/swagger-ui": "^2.1.0",
-		"fastify": "^4.25.2"
+		"@fastify/swagger-ui": "^4.0.1",
+		"colors": "^1.4.0",
+		"fastify": "^4.28.1",
+		"fs": "^0.0.1-security"
 	},
 	"devDependencies": {
 		"@types/node": "^20.14.11"

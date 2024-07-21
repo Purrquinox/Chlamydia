@@ -1,18 +1,19 @@
 // Packages
-import fs from "node:fs";
-import path from "path";
 import cors from "@fastify/cors";
 import ratelimit from "@fastify/rate-limit";
 import swagger from "@fastify/swagger";
 import ui from "@fastify/swagger-ui";
 import Fastify, { FastifyInstance } from "fastify";
-import { name, description, version } from "../../package.json";
-import { success } from "../logger";
+import autoload from "@fastify/autoload";
+import config from "../config.js";
+import { success } from "../logger.js";
+
+// Config
+const { name, description, version, port } = config;
 
 // Middleware
-const PORT: Number = 50805;
 const app: FastifyInstance = Fastify({
-	logger: true,
+	logger: false,
 });
 
 app.register(cors, {
@@ -31,24 +32,24 @@ app.register(cors, {
 });
 
 app.register(swagger, {
-	swagger: {
+	openapi: {
 		info: {
 			title: name.charAt(0).toUpperCase() + name.slice(1),
 			description: description,
 			version: version,
 		},
-		host: `localhost:${PORT}`,
-		schemes: ["http"],
-		consumes: ["application/json"],
-		produces: ["application/json"],
 		tags: [
 			{
 				name: "platforms",
 				description:
 					"API endpoints responsible for accessing platform information.",
 			},
+			{
+				name: "plugins",
+				description:
+					"API endpoints responsible for accessing plugin information.",
+			},
 		],
-		securityDefinitions: {},
 	},
 	hideUntagged: true,
 });
@@ -60,18 +61,12 @@ app.register(ui, {
 		deepLinking: true,
 	},
 	uiHooks: {
-		onRequest: (request, reply, next) => {
-			next();
-		},
-		preHandler: (request, reply, next) => {
-			next();
-		},
+		onRequest: (request, reply, next) => next(),
+		preHandler: (request, reply, next) => next(),
 	},
 	staticCSP: true,
 	transformStaticCSP: (header) => header,
-	transformSpecification: (swaggerObject, request, reply) => {
-		return swaggerObject;
-	},
+	transformSpecification: (swaggerObject, request, reply) => swaggerObject,
 	transformSpecificationClone: true,
 });
 
@@ -90,53 +85,21 @@ app.addHook("preHandler", (req, res, done) => {
 	done();
 });
 
-// API Endpoints Map
-const getFilesInDirectory = (dir: string) => {
-	let files: string[] = [];
-	const filesInDir = fs.readdirSync(dir);
+app.register(autoload, {
+	dir: "./dist/api/endpoints",
+});
 
-	for (const file of filesInDir) {
-		const filePath = path.join(dir, file);
-		const stat = fs.statSync(filePath);
+// Swagger
+app.ready(() => app.swagger());
 
-		if (stat.isDirectory())
-			files = files.concat(getFilesInDirectory(filePath));
-		else files.push(filePath);
-	}
-
-	return files;
-};
-
-// API Endpoints
-const apiEndpointsFiles = getFilesInDirectory(
-	"./dist/src/api/endpoints"
-).filter((file) => file.endsWith(".js"));
-
-for (const file of apiEndpointsFiles) {
-	import(`../../../${file}`)
-		.then(async (module) => {
-			await app.route(module.default.default);
-		})
-		.catch((error) => {
-			console.error(`Error importing ${file}: ${error}`);
-		});
-}
-
-setTimeout(() => {
-	// Swagger
-	app.ready(() => {
-		app.swagger();
-	});
-
-	// Start Server
-	app.listen({ port: Number(PORT) }, (err) => {
-		if (err) throw err;
-		else
-			success(
-				"API",
-				`Server has started and is listening on http://localhost:${String(
-					PORT
-				)}/ 🚀🌐`
-			);
-	});
-}, 8000);
+// Start Server
+app.listen({ port: Number(port), host: "0.0.0.0" }, (err) => {
+	if (err) throw err;
+	else
+		success(
+			"API",
+			`Server has started and is listening on http://0.0.0.0:${String(
+				port
+			)}/ 🚀🌐`
+		);
+});
