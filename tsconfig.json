@@ -3,12 +3,12 @@
 		"target": "es2016",
 		"module": "node16",
 		"allowJs": true,
-		"outDir": "dist",
+		"outDir": "coredist",
 		"esModuleInterop": true,
 		"forceConsistentCasingInFileNames": true,
 		"strict": false,
 		"moduleResolution": "Node16",
 		"skipLibCheck": true
 	},
-	"include": ["src/**/*"]
+	"include": ["core/**/*"]
 }

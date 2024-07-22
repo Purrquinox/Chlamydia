@@ -7,8 +7,8 @@ import Fastify, { FastifyInstance } from "fastify";
 import autoload from "@fastify/autoload";
 import config from "../config.js";
 import { success } from "../logger.js";
-import { fileURLToPath } from 'url'
-import { dirname, join } from 'path'
+import { fileURLToPath } from "url";
+import { dirname, join } from "path";
 
 // Namespace
 const __filename = fileURLToPath(import.meta.url);

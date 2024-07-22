@@ -5,7 +5,7 @@
 	"main": "index.js",
 	"type": "module",
 	"scripts": {
-		"start": "node ./dist/api/api",
+		"start": "node ./coredist/api/api",
 		"tsc": "tsc",
 		"format": "prettier --write ."
 	},
