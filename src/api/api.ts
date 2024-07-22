@@ -7,6 +7,12 @@ import Fastify, { FastifyInstance } from "fastify";
 import autoload from "@fastify/autoload";
 import config from "../config.js";
 import { success } from "../logger.js";
+import { fileURLToPath } from 'url'
+import { dirname, join } from 'path'
+
+// Namespace
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 // Config
 const { name, description, version, port } = config;
@@ -86,11 +92,11 @@ app.addHook("preHandler", (req, res, done) => {
 });
 
 app.register(autoload, {
-	dir: "./dist/api/endpoints",
+	dir: join(__dirname, "endpoints"),
 });
 
 // Swagger
-app.ready(() => app.swagger());
+app.ready(() => setTimeout(() => app.swagger(), 2000));
 
 // Start Server
 app.listen({ port: Number(port), host: "0.0.0.0" }, (err) => {
@@ -98,7 +104,7 @@ app.listen({ port: Number(port), host: "0.0.0.0" }, (err) => {
 	else
 		success(
 			"API",
-			`Server has started and is listening on http://0.0.0.0:${String(
+			`Server has started and is listening on http://localhost:${String(
 				port
 			)}/ 🚀🌐`
 		);
