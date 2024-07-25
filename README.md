@@ -4,7 +4,6 @@ Chlamydia is a comprehensive program designed to enhance the customization and p
 
 ![GitHub License](https://img.shields.io/github/license/selectdev/Chlamydia?label=License)
 ![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/selectdev/Chlamydia/codeql.yml?branch=development&label=Build%20Status)
-![Service Version](https://img.shields.io/github/package-json/version/selectdev/Chlamydia?label=Service%20Version)
 
 ## Features
 
