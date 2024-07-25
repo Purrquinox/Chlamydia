@@ -51,12 +51,12 @@ func StartAPI() {
 		ErrorStruct: types.ApiError{},
 		Info: docs.Info{
 			Title:          config.Name,
-			Version:        "0.0.1-predev",
+			Version:        config.Version,
 			Description:    config.Description,
 			Contact: docs.Contact{
 				Name:  config.Contact.Name,
-                URL:   config.Contact.URL,
-                Email: config.Contact.Email,
+                                URL:   config.Contact.URL,
+                                Email: config.Contact.Email,
 			},
 			License: docs.License{
 				Name: "AGPL-3.0",
