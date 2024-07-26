@@ -1,9 +1,10 @@
 package api
 
 import (
-	"Chlamydia/types"
 	"Chlamydia/constants"
 	"Chlamydia/state"
+	"Chlamydia/types"
+	"net/http"
 
 	"github.com/infinitybotlist/eureka/uapi"
 )
@@ -19,7 +20,7 @@ func (d DefaultResponder) New(err string, ctx map[string]string) any {
 
 func Setup() {
 	uapi.SetupState(uapi.UAPIState{
-		Logger:    state.Logger,
+		Logger:  state.Logger,
 		Context: state.Context,
 		Constants: &uapi.UAPIConstants{
 			ResourceNotFound:    constants.ResourceNotFound,
@@ -31,5 +32,8 @@ func Setup() {
 			BodyRequired:        constants.BodyRequired,
 		},
 		DefaultResponder: DefaultResponder{},
+		Authorize: func(r uapi.Route, req *http.Request) (uapi.AuthData, uapi.HttpResponse, bool) {
+			return uapi.AuthData{}, uapi.HttpResponse{}, true
+		},
 	})
 }

@@ -105,4 +105,4 @@ typings/
 package-lock.json
 
 # Dist
-coredist
+bin

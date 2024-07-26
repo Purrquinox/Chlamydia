@@ -1,13 +1,17 @@
-package state;
+package state
 
 import (
 	"context"
+
+	"github.com/infinitybotlist/eureka/snippets"
 	"go.uber.org/zap"
-	"github.com/go-playground/validator/v10"
 )
 
 var (
-	Logger    *zap.Logger
-	Context   = context.Background()
-	Validator = validator.New()
+	Logger  *zap.Logger
+	Context = context.Background()
 )
+
+func Setup() {
+	Logger = snippets.CreateZap()
+}
