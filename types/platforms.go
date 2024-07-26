@@ -6,9 +6,10 @@ type PlatformInterface interface {
 }
 
 type PlatformType struct {
-	Name        string            `json:"name"`
-	Description string            `json:"description"`
-	Logo        string            `json:"logo"`
-	Show        bool              `json:"show"`
-	Platform    PlatformInterface `json:"platform"`
+	Name                 string              `json:"name"`
+	Description          string              `json:"description"`
+	Logo                 string              `json:"logo"`
+	Show                 bool                `json:"show"`
+	Platform             PlatformInterface   `json:"platform"`
+	AdditionalParameters []map[string]string `json:"additional_parameters"`
 }
