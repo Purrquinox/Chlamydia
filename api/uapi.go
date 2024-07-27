@@ -6,7 +6,7 @@ import (
 	"Chlamydia/types"
 	"net/http"
 
-	"github.com/infinitybotlist/eureka/uapi"
+	"Chlamydia/uapi"
 )
 
 type DefaultResponder struct{}

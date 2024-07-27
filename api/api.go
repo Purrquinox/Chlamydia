@@ -6,15 +6,15 @@ import (
 
 	"Chlamydia/config"
 	"Chlamydia/constants"
+	docs "Chlamydia/doclib"
 	"Chlamydia/state"
 	"Chlamydia/types"
+	"Chlamydia/uapi"
 
 	"Chlamydia/routes/primary"
 
 	"github.com/go-chi/chi/v5"
-	docs "github.com/infinitybotlist/eureka/doclib"
 	"github.com/infinitybotlist/eureka/jsonimpl"
-	"github.com/infinitybotlist/eureka/uapi"
 	"go.uber.org/zap"
 
 	_ "embed"
@@ -55,8 +55,11 @@ func StartAPI() {
 		URL:         "http://localhost:" + config.Port + "/",
 		ErrorStruct: types.ApiError{},
 		Info: docs.Info{
-			Title:       config.Name,
-			Version:     config.Version,
+			Title:   config.Name,
+			Version: config.Version,
+			Logo: *&docs.Logo{
+				URL: config.Logo,
+			},
 			Description: config.Description,
 			Contact: docs.Contact{
 				Name:  config.Contact.Name,

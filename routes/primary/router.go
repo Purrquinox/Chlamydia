@@ -2,13 +2,14 @@ package primary
 
 import (
 	"Chlamydia/config"
+	docs "Chlamydia/doclib"
 	"Chlamydia/state"
 	"Chlamydia/types"
+	"Chlamydia/uapi"
+
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
-	docs "github.com/infinitybotlist/eureka/doclib"
-	"github.com/infinitybotlist/eureka/uapi"
 )
 
 const tagName = "Main"

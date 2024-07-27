@@ -3,6 +3,7 @@ package config
 type Config struct {
 	Name        string
 	Version     string
+	Logo        string
 	Description string
 	Port        string
 	Contact     ContactCard
@@ -24,6 +25,7 @@ func NewConfig() *Config {
 	return &Config{
 		Name:        "Chlamydia",
 		Version:     "0.0.1-predev",
+		Logo:        "https://purrquinox.com/logo.png", /*https://chlamydia.purrquinox.com/logo.png*/
 		Description: "Chlamydia is a comprehensive program designed to enhance the customization and personalization of your PC's RGB lighting and AIO cooler. By leveraging the SDKs of supported RGB systems, such as Corsair and NZXT, it provides users with greater control and flexibility over their hardware. This allows for a more tailored and immersive gaming or computing experience, making it easier to achieve the exact look and performance you desire.",
 		Port:        "50805",
 		Contact: ContactCard{
