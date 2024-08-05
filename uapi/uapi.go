@@ -55,7 +55,7 @@ type UAPIInitData struct {
 type UAPIState struct {
 	Logger              *zap.Logger
 	Authorize           func(r Route, req *http.Request) (AuthData, HttpResponse, bool)
-	AuthTypeMap         map[string]string // E.g. bot => Bot, user => User etc.
+	AuthTypeMap         map[string]string
 	RouteDataMiddleware func(rd *RouteData, req *http.Request) (*RouteData, error)
 	BaseSanityCheck     func(r Route) error
 	PatchDocs           func(d *docs.Doc) *docs.Doc

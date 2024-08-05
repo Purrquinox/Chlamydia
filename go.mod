@@ -8,7 +8,10 @@ require (
 	go.uber.org/zap v1.27.0
 )
 
+require github.com/google/uuid v1.6.0 // indirect
+
 require (
+	github.com/Shopify/go-lua v0.0.0-20240527182111-9ab1540f3f5f
 	github.com/bahlo/generic-list-go v0.2.0 // indirect
 	github.com/buger/jsonparser v1.1.1 // indirect
 	github.com/bytedance/sonic v1.11.9 // indirect

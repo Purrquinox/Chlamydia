@@ -38,6 +38,7 @@ func Route(d uapi.RouteData, r *http.Request) uapi.HttpResponse {
 		OpenAPI           string               `json:"openapi"`
 		DocumentationLink string               `json:"documentation_link"`
 		Platforms         []types.PlatformType `json:"platforms"`
+		Devices           []types.Device       `json:"devices"`
 	}
 
 	config := config.NewConfig()
@@ -51,6 +52,7 @@ func Route(d uapi.RouteData, r *http.Request) uapi.HttpResponse {
 			OpenAPI:           "http://localhost:" + config.Port + "/openapi",
 			DocumentationLink: "http://localhost:" + config.Port + "/docs",
 			Platforms:         state.GetPlatforms(),
+			Devices:           state.GetDevices(),
 		},
 	}
 }
