@@ -11,6 +11,8 @@ import (
 	"Chlamydia/types"
 	"Chlamydia/uapi"
 
+	"Chlamydia/routes/platforms"
+	"Chlamydia/routes/platforms/getPlatform"
 	"Chlamydia/routes/primary"
 
 	"github.com/go-chi/chi/v5"
@@ -84,6 +86,8 @@ func StartAPI() {
 	// Register API routes and services
 	services := []uapi.APIRouter{
 		primary.Router{},
+		platforms.Router{},
+		getPlatform.Router{},
 	}
 
 	for _, service := range services {
