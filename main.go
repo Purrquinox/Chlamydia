@@ -13,7 +13,10 @@ import (
 func main() {
 	// Setup
 	state.Setup()
-	api.StartAPI()
+
+	go func() {
+		api.StartAPI()
+	}()
 
 	// Graceful shutdown
 	sigs := make(chan os.Signal, 1)
