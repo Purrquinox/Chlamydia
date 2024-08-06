@@ -10,7 +10,7 @@ CC_linux_arm64 := aarch64-linux-gnu-gcc
 CC_windows_amd64 := x86_64-w64-mingw32-gcc
 CC_windows_arm64 := aarch64-w64-mingw32-gcc
 
-.PHONY: all release fmt clean install-cross-compilers
+.PHONY: all release fmt clean prerelease
 
 all:
     CGO_ENABLED=1 go build -v $(GOFLAGS_DBG)
