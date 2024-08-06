@@ -13,9 +13,8 @@ import (
 func main() {
 	// Setup
 	state.Setup()
-
 	go func() {
-		api.StartAPI()
+		api.StartAPI() // Start API
 	}()
 
 	// Graceful shutdown

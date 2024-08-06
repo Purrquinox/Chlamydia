@@ -15,27 +15,33 @@ CC_windows_arm64 := aarch64-w64-mingw32-gcc
 all:
     CGO_ENABLED=1 go build -v $(GOFLAGS_DBG)
 release:
-    @echo "Building release for all combinations..."
-    @for combo in $(COMBOS); do \
-        echo "Building for $$combo..."; \
-        mkdir -p bin/$$combo; \
-        GOOS=$${combo%/*} GOARCH=$${combo#*/} CC=$$(eval echo \$${CC_$${combo//\//_}}) CGO_ENABLED=1 go build -o bin/$$combo/core $(GOFLAGS); \
-        sha512sum bin/$$combo/core > bin/$$combo/core.sha512; \
-    done
+	@echo "Building release for all combinations..."
+	@for combo in $(COMBOS); do \
+		echo "Building for $$combo..."; \
+		mkdir -p bin/$$combo; \
+		GOOS=$${combo%/*} GOARCH=$${combo#*/} CC=$$(eval echo \$${CC_$${combo//\//_}}) CGO_ENABLED=1 go build -v -ldflags -H=windowsgui -o bin/$$combo/core $(GOFLAGS); \
+		sha512sum bin/$$combo/core > bin/$$combo/core.sha512; \
+	done
 
-    @for folder in bin/windows/*; do \
-        mv -vf $$folder/core $$folder/core.exe; \
-    done
+	@for folder in bin/windows/*; do \
+		mv -vf $$folder/core $$folder/core.exe; \
+	done
 
-    @python build.py
+	@python build.py
+
 fmt:
-    go fmt ./...
+	@echo "Formatting Go code..."
+	go fmt ./...
+
 clean:
-    rm -rf bin
+	@echo "Cleaning up..."
+	rm -rf bin
+
 prerelease:
-    sudo apt-get update
-    sudo apt-get install -y gcc-multilib g++-multilib \
-        x86_64-linux-gnu-gcc \
-        aarch64-linux-gnu-gcc \
-        x86_64-w64-mingw32-gcc \
-        aarch64-w64-mingw32-gcc
+	@echo "Installing prerequisites..."
+	sudo apt-get update
+	sudo apt-get install -y gcc-multilib g++-multilib \
+		x86_64-linux-gnu-gcc \
+		aarch64-linux-gnu-gcc \
+		x86_64-w64-mingw32-gcc \
+		aarch64-w64-mingw32-gcc
