@@ -23,6 +23,12 @@ func (c *Test) ListDevices() []types.Device {
 			DeviceType:     types.LedController,
 			DevicePlatform: TestID,
 		},
+		{
+			DeviceName:     "Test Device 3",
+			DeviceID:       "test_device_3",
+			DeviceType:     types.Cooler,
+			DevicePlatform: TestID,
+		},
 	}
 	return devices
 }

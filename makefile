@@ -13,21 +13,11 @@ CC_windows_arm64 := aarch64-w64-mingw32-gcc
 .PHONY: all release fmt clean prerelease
 
 all:
-    CGO_ENABLED=1 go build -v $(GOFLAGS_DBG)
+	@echo "Building in debug mode..."
+	CGO_ENABLED=1 go build -v $(GOFLAGS_DBG)
+
 release:
-	@echo "Building release for all combinations..."
-	@for combo in $(COMBOS); do \
-		echo "Building for $$combo..."; \
-		mkdir -p bin/$$combo; \
-		GOOS=$${combo%/*} GOARCH=$${combo#*/} CC=$$(eval echo \$${CC_$${combo//\//_}}) CGO_ENABLED=1 go build -v -ldflags -H=windowsgui -o bin/$$combo/core $(GOFLAGS); \
-		sha512sum bin/$$combo/core > bin/$$combo/core.sha512; \
-	done
-
-	@for folder in bin/windows/*; do \
-		mv -vf $$folder/core $$folder/core.exe; \
-	done
-
-	@python build.py
+	@python build_release.py
 
 fmt:
 	@echo "Formatting Go code..."
