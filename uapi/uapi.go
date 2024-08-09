@@ -1,4 +1,3 @@
-// Defines a standard way to define routes
 package uapi
 
 import (
@@ -7,51 +6,37 @@ import (
 	"net/http"
 	"reflect"
 	"strings"
+	"sync"
 
 	docs "Chlamydia/doclib"
+
+	"github.com/go-chi/chi/v5"
 	"github.com/infinitybotlist/eureka/jsonimpl"
 	"go.uber.org/zap"
 
-	"github.com/go-chi/chi/v5"
 	"github.com/go-playground/validator/v10"
+	"github.com/gorilla/websocket"
 	"golang.org/x/exp/slices"
 )
 
 type UAPIConstants struct {
-	// String returned when the resource could not be found
-	ResourceNotFound string
-
-	// String returned when the request is invalid
-	BadRequest string
-
-	// String returned when the user is not authorized (403)
-	Forbidden string
-
-	// String returned when the user is not authorized (401)
-	Unauthorized string
-
-	// String returned when the server encounters an internal error
+	ResourceNotFound    string
+	BadRequest          string
+	Forbidden           string
+	Unauthorized        string
 	InternalServerError string
-
-	// String returned when the method is not allowed
-	MethodNotAllowed string
-
-	// String returned when the body is required
-	BodyRequired string
+	MethodNotAllowed    string
+	BodyRequired        string
 }
 
 type UAPIDefaultResponder interface {
-	// Returns the msg with the response type
 	New(msg string, ctx map[string]string) any
 }
 
-// This struct contains initialization data while loading UAPI (such as the current tag etc.)
 type UAPIInitData struct {
-	// The current tag being loaded
 	Tag string
 }
 
-// Setup struct
 type UAPIState struct {
 	Logger              *zap.Logger
 	Authorize           func(r Route, req *http.Request) (AuthData, HttpResponse, bool)
@@ -59,20 +44,15 @@ type UAPIState struct {
 	RouteDataMiddleware func(rd *RouteData, req *http.Request) (*RouteData, error)
 	BaseSanityCheck     func(r Route) error
 	PatchDocs           func(d *docs.Doc) *docs.Doc
+	Context             context.Context
+	Constants           *UAPIConstants
+	DefaultResponder    UAPIDefaultResponder
+	InitData            UAPIInitData
+}
 
-	// Used in cache algo
-	Context context.Context
-
-	// Api constants
-	Constants *UAPIConstants
-
-	// UAPI default response type to use for default responses
-	//
-	// This is used for 404 errors, validation errors, default statuses etc.
-	DefaultResponder UAPIDefaultResponder
-
-	// Used to store init data
-	InitData UAPIInitData
+type APIRouter interface {
+	Routes(r *chi.Mux)
+	Tag() (string, string)
 }
 
 func (s *UAPIState) SetCurrentTag(tag string) {
@@ -88,14 +68,125 @@ func SetupState(s UAPIState) {
 }
 
 var (
-	// Stores the UAPI state for UAPI plugins
 	State *UAPIState
 )
 
-// A API Router, not to be confused with Router which routes the actual routes
-type APIRouter interface {
-	Routes(r *chi.Mux)
-	Tag() (string, string)
+// WebSocket group management
+type WebSocketGroup struct {
+	Clients map[*websocket.Conn]bool
+	Mu      sync.Mutex
+}
+
+var wsGroups = make(map[string]*WebSocketGroup)
+var wsUpgrader = websocket.Upgrader{
+	CheckOrigin: func(r *http.Request) bool {
+		return true
+	},
+}
+
+func addClientToGroup(groupName string, conn *websocket.Conn) {
+	group, exists := wsGroups[groupName]
+	if !exists {
+		group = &WebSocketGroup{Clients: make(map[*websocket.Conn]bool)}
+		wsGroups[groupName] = group
+	}
+
+	group.Mu.Lock()
+	group.Clients[conn] = true
+	group.Mu.Unlock()
+}
+
+func removeClientFromGroup(groupName string, conn *websocket.Conn) {
+	group, exists := wsGroups[groupName]
+	if !exists {
+		return
+	}
+
+	group.Mu.Lock()
+	delete(group.Clients, conn)
+	group.Mu.Unlock()
+}
+
+func broadcastMessage(groupName string, message []byte) {
+	group, exists := wsGroups[groupName]
+	if !exists {
+		return
+	}
+
+	group.Mu.Lock()
+	defer group.Mu.Unlock()
+
+	for client := range group.Clients {
+		err := client.WriteMessage(websocket.TextMessage, message)
+		if err != nil {
+			client.Close()
+			delete(group.Clients, client)
+		}
+	}
+}
+
+type WebSocketRoute struct {
+	Route
+	GroupName string
+	AuthType  string
+}
+
+func (wsr WebSocketRoute) WSRoute(ro Router) {
+	if wsr.OpId == "" {
+		panic("OpId is empty: " + wsr.String())
+	}
+
+	if wsr.Handler == nil {
+		panic("Handler is nil: " + wsr.String())
+	}
+
+	ro.Get(wsr.Pattern, func(w http.ResponseWriter, req *http.Request) {
+		handleWebSocket(wsr, w, req)
+	})
+}
+
+func handleWebSocket(wsr WebSocketRoute, w http.ResponseWriter, req *http.Request) {
+	ctx := req.Context()
+	resp := make(chan HttpResponse)
+
+	go func() {
+		defer func() {
+			err := recover()
+
+			if err != nil {
+				State.Logger.Error("[uapi/handleWebSocket] WebSocket handler panic'd", zap.String("operationId", wsr.OpId), zap.String("method", req.Method), zap.String("endpointPattern", wsr.Pattern), zap.String("path", req.URL.Path), zap.Any("error", err))
+				resp <- HttpResponse{
+					Status: http.StatusInternalServerError,
+					Data:   State.Constants.InternalServerError,
+				}
+			}
+		}()
+
+		conn, err := wsUpgrader.Upgrade(w, req, nil)
+		if err != nil {
+			State.Logger.Error("[uapi/handleWebSocket] Failed to upgrade to WebSocket", zap.Error(err))
+			resp <- HttpResponse{
+				Status: http.StatusInternalServerError,
+				Data:   State.Constants.InternalServerError,
+			}
+			return
+		}
+		defer conn.Close()
+
+		groupName := wsr.GroupName
+		addClientToGroup(groupName, conn)
+		defer removeClientFromGroup(groupName, conn)
+
+		for {
+			_, message, err := conn.ReadMessage()
+			if err != nil {
+				break
+			}
+			broadcastMessage(groupName, message)
+		}
+	}()
+
+	respond(ctx, w, resp)
 }
 
 type Method int
@@ -109,7 +200,6 @@ const (
 	HEAD
 )
 
-// Returns the method as a string
 func (m Method) String() string {
 	switch m {
 	case GET:
@@ -132,41 +222,36 @@ func (m Method) String() string {
 type AuthType struct {
 	URLVar       string
 	Type         string
-	AllowedScope string // If this is set, then ban checks are not fatal
+	AllowedScope string
 }
 
 type AuthData struct {
 	TargetType string         `json:"target_type"`
 	ID         string         `json:"id"`
 	Authorized bool           `json:"authorized"`
-	Banned     bool           `json:"banned"` // Only applicable with AllowedScope
-	Data       map[string]any `json:"data"`   // Additional data
+	Banned     bool           `json:"banned"`
+	Data       map[string]any `json:"data"`
 }
 
-// Represents a route on the API
 type Route struct {
-	Method       Method
-	Pattern      string
-	Aliases      map[string]string // Aliases for the route, this is useful for e.g. URL rewrites, format is pattern: reason
-	OpId         string
-	Handler      func(d RouteData, r *http.Request) HttpResponse
-	Setup        func()
-	Docs         func() *docs.Doc
-	Auth         []AuthType
-	ExtData      map[string]any
-	AuthOptional bool
-	SanityCheck  func() error
-
-	// Disables sanity check that ensures all variables are followed by a /
-	//
-	// e.g. /{foo}s/
+	Method                Method
+	Pattern               string
+	Aliases               map[string]string
+	OpId                  string
+	Handler               func(d RouteData, r *http.Request) HttpResponse
+	Setup                 func()
+	Docs                  func() *docs.Doc
+	Auth                  []AuthType
+	ExtData               map[string]any
+	AuthOptional          bool
+	SanityCheck           func() error
 	DisablePathSlashCheck bool
 }
 
 type RouteData struct {
 	Context context.Context
 	Auth    AuthData
-	Props   map[string]string // Stores additional properties
+	Props   map[string]string
 }
 
 type Router interface {
@@ -219,7 +304,7 @@ func (r Route) Route(ro Router) {
 		err := r.SanityCheck()
 
 		if err != nil {
-			panic("Sanity check failed: " + err.Error())
+			panic("Sanity check failed: " + r.String())
 		}
 	}
 
@@ -245,7 +330,6 @@ func (r Route) Route(ro Router) {
 		docsObj = State.PatchDocs(docsObj)
 	}
 
-	// Count the number of { and } in the pattern
 	brStart := strings.Count(r.Pattern, "{")
 	brEnd := strings.Count(r.Pattern, "}")
 	pathParams := []string{}
@@ -261,7 +345,6 @@ func (r Route) Route(ro Router) {
 		}
 	}
 
-	// Get pattern params from the pattern
 	if !r.DisablePathSlashCheck {
 		for _, param := range strings.Split(r.Pattern, "/") {
 			if strings.HasPrefix(param, "{") && strings.HasSuffix(param, "}") {
@@ -293,7 +376,6 @@ func (r Route) Route(ro Router) {
 		}
 	}
 
-	// Add the path params to the docs
 	docs.Route(docsObj)
 
 	createRouteHandler(r, ro, r.Pattern)
@@ -391,17 +473,11 @@ func respond(ctx context.Context, w http.ResponseWriter, data chan HttpResponse)
 }
 
 type HttpResponse struct {
-	// Data is the data to be sent to the client
-	Data string
-	// Optional, can be used in place of Data
-	Bytes []byte
-	// Json body to be sent to the client
-	Json any
-	// Headers to set
-	Headers map[string]string
-	// Status is the HTTP status code to send
-	Status int
-	// Redirect to a URL
+	Data     string
+	Bytes    []byte
+	Json     any
+	Headers  map[string]string
+	Status   int
 	Redirect string
 }
 
@@ -431,7 +507,6 @@ func ValidatorErrorResponse(compiled map[string]string, v validator.ValidationEr
 	for i, err := range v {
 		fname := err.StructField()
 		if strings.Contains(err.Field(), "[") {
-			// We have a array response, so we need to get the array name
 			fname = strings.Split(err.Field(), "[")[0] + "$arr"
 		}
 
@@ -457,8 +532,6 @@ func ValidatorErrorResponse(compiled map[string]string, v validator.ValidationEr
 	}
 }
 
-// Creates a default HTTP response based on the status code
-// 200 is treated as 204 No Content
 func DefaultResponse(statusCode int) HttpResponse {
 	switch statusCode {
 	case http.StatusForbidden:
@@ -551,7 +624,6 @@ func handle(r Route, w http.ResponseWriter, req *http.Request) {
 	respond(ctx, w, resp)
 }
 
-// Read body
 func marshalReq(r *http.Request, dst interface{}) (resp HttpResponse, ok bool) {
 	defer r.Body.Close()
 
